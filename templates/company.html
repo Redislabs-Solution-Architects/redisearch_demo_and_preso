@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Redis</title>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <link rel="stylesheet" href="http://jqueryui.com/resources/demos/style.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+</head>
+<body>
+<div class="ui-widget">
+  <br><br>
+  <table class="table table-hover">
+  {% for c in company %}
+    {% for i in ['Fullname', 'Rank', 'Website', 'Industry', 'Sector', 'Ceo', 'Ceotitle', 'Revenues', 'Assets'] %}
+    <tr><td>{{ i }}</td><td>{{ c[i] }}</td></tr>
+    {% endfor %}
+  {% endfor %}
+  </table>
+  <br><br>
+</div>
+ 
+ 
+</body>
+</html>

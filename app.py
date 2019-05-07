@@ -1,34 +1,11 @@
 from flask import Flask, render_template, request, redirect
 from redisearch import AutoCompleter, Suggestion, Client, TextField, Query
 import json
+import redis
 import csv
 
 app = Flask(__name__)
 
-
-client = Client('Fortune500',
-                host='localhost',
-                port=6379)
-
-@app.route('/')
-def hello_world():
-    return render_template('search.html')
-
-@app.route('/autocomplete')
-def auto_complete():
-    ac = AutoCompleter('ac')
-    name = request.args.get('term')
-    suggest = ac.get_suggestions(name, fuzzy=True)
-    return(json.dumps([
-        {'value': item.string, 'label': item.string, 'id': item.string, 'score': item.score}
-        for item in suggest]))
-
-@app.route('/rank/<int:rank_id>')
-def show_rank(rank_id):
-    thecompany = client.search(Query(rank_id).limit_fields('Rank'))
-    return render_template('company.html', company=thecompany.docs)
-
-@app.route('/loaddata')
 def load_data():
     ac = AutoCompleter('ac')
 
@@ -63,7 +40,7 @@ def load_data():
         line_count = 0
         for row in csv_reader:
             if line_count > 0:
-                ac.add_suggestions(Suggestion(row[1].replace('"', ''), 1.0))
+                ac.add_suggestions(Suggestion(row[1].replace('"', ''), payload=row[0]))
                 client.add_document(row[1],
                                     Rank=row[0],
                                     Title=row[1],
@@ -91,8 +68,32 @@ def load_data():
             line_count += 1
 
 
-    return redirect("/", code=302)
 
+
+client = Client('Fortune500',
+                host='localhost',
+                port=6379)
+
+@app.route('/')
+def hello_world():
+   r = redis.Redis()
+   if len(r.keys('ac')) < 1:
+       load_data()
+   return render_template('search.html')
+
+@app.route('/autocomplete')
+def auto_complete():
+    ac = AutoCompleter('ac')
+    name = request.args.get('term')
+    suggest = ac.get_suggestions(name, fuzzy=True, with_payloads=True, with_scores=True)
+    return(json.dumps([
+        {'value': item.string, 'label': item.string, 'id': item.payload, 'score': item.score}
+        for item in suggest]))
+
+@app.route('/rank/<int:rank_id>')
+def show_rank(rank_id):
+    thecompany = client.search(Query(rank_id).limit_fields('Rank'))
+    return render_template('company.html', company=thecompany.docs)
 
 if __name__ == '__main__':
    app.run()
